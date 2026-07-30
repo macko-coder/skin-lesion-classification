@@ -7,3 +7,4 @@ grad-cam
 matplotlib
 pillow
 tqdm
+kaggle
