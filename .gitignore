@@ -15,9 +15,20 @@ node_modules/
 frontend/build/
 frontend/dist/
 
+# Backend runtime data
+backend/storage/uploads/*
+backend/storage/gradcam/*
+!backend/storage/uploads/.gitkeep
+!backend/storage/gradcam/.gitkeep
+
+# Postgres data (once docker-compose adds a volume/bind-mount)
+postgres_data/
+pgdata/
+
 # Env
 .env
 .env.local
+backend/.env
 
 # OS
 .DS_Store

@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic-settings
+sqlalchemy
+psycopg2-binary
+alembic
+pillow
+torch
+torchvision
+grad-cam
+pytest
+httpx
