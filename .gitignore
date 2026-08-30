@@ -8,6 +8,8 @@ __pycache__/
 ml/data/
 ml/models/*.pt
 ml/models/*.pth
+ml/models/*.onnx
+ml/models/*.onnx.data
 *.ckpt
 
 # Node / frontend

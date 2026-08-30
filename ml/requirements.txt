@@ -8,3 +8,5 @@ matplotlib
 pillow
 tqdm
 kaggle
+onnx
+onnxscript
