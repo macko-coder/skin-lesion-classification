@@ -3,6 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Repo root, so relative paths in .env (e.g. MODEL_CHECKPOINT_PATH) resolve
@@ -21,6 +22,16 @@ class Settings(BaseSettings):
     device: str = "cpu"
     # Comma-separated origins in .env, e.g. "http://localhost:3000,http://localhost:5173"
     cors_origins: str = "http://localhost:3000"
+
+    @field_validator("storage_dir", "model_checkpoint_path", mode="after")
+    @classmethod
+    def _resolve_relative_to_base_dir(cls, v: Path) -> Path:
+        # .env may supply a relative path (e.g. MODEL_CHECKPOINT_PATH=../ml/...,
+        # written assuming CWD is backend/). Anchor it to BASE_DIR instead of
+        # the process's actual CWD, so behavior doesn't depend on where the
+        # app/a script happens to be launched from -- matches ml/src's
+        # Path(__file__)-based path handling elsewhere in the repo.
+        return v if v.is_absolute() else (BASE_DIR / v).resolve()
 
     @property
     def cors_origin_list(self) -> list[str]:
