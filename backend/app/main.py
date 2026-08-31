@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.app.api.routes import health, predict
+from backend.app.api.routes import cases, health, predict
 from backend.app.core.config import get_settings
 from backend.app.ml.inference import get_model
 
@@ -32,6 +32,7 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(predict.router)
+app.include_router(cases.router)
 
 # Plain HTML+JS test page for POST /predict -- NOT the real frontend (that's
 # frontend/, a separate React app, deliberately not started yet). Mounted
@@ -39,6 +40,6 @@ app.include_router(predict.router)
 # Same-origin as the API, so no CORS wrangling needed for the fetch() calls.
 app.mount("/ui", StaticFiles(directory=STATIC_DIR, html=True), name="ui")
 
-# cases router and a StaticFiles mount for storage/ (to serve back
-# image_path/gradcam_image_path) get added once app/api/routes/cases.py
-# has a real implementation (later step).
+# A StaticFiles mount for storage/ (to serve back image_path/
+# gradcam_image_path as viewable URLs) gets added once the frontend
+# actually needs to display them (later step).
