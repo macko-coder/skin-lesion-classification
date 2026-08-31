@@ -12,5 +12,15 @@ personelowi medycznemu poprzez aplikację webową.
 
 ## Status
 
-Projekt w fazie wczesnej implementacji. Aktualna roadmapa: dataset (HAM10000) → model bazowy →
-Grad-CAM → backend → frontend → konteneryzacja (Docker Compose) → testy i dokumentacja.
+Projekt w fazie wczesnej implementacji.
+
+- ✅ Dataset (HAM10000, podział po `lesion_id`) i model bazowy (EfficientNet-B0, transfer
+  learning, dwuetapowy trening) — `ml/`
+- ✅ Grad-CAM (skrypt eksperymentalny, jeszcze niepodłączony do backendu)
+- 🔧 Backend (FastAPI + PostgreSQL) — w budowie: `GET /health`, `POST /predict` (inferencja +
+  zapis przypadku), `GET/DELETE /cases` (historia przypadków), przesłane zdjęcia serwowane pod
+  `/storage/uploads`
+- ⬜ Frontend (React), Grad-CAM w API, konteneryzacja (Docker Compose), testy i dokumentacja
+
+Aktualna roadmapa: dataset → model bazowy → Grad-CAM → backend → frontend → konteneryzacja →
+testy i dokumentacja.
