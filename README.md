@@ -10,6 +10,76 @@ personelowi medycznemu poprzez aplikację webową.
 - `backend/` — REST API (FastAPI) obsługujące inferencję modelu i historię przypadków (PostgreSQL)
 - `frontend/` — aplikacja webowa (React) dla personelu medycznego
 
+## Uruchomienie (backend)
+
+### Wymagania
+
+- Python 3.12
+- Docker (baza danych PostgreSQL)
+- Wytrenowany checkpoint modelu pod `ml/models/efficientnet_b0_ham10000.pt` — plik jest
+  gitignorowany, więc trzeba go samodzielnie wytrenować (patrz sekcja
+  [Trening modelu](#trening-modelu-opcjonalnie)) albo skopiować z innego źródła
+
+### Backend + baza danych
+
+Wszystkie polecenia z katalogu głównego repozytorium, chyba że zaznaczono inaczej.
+
+1. Środowisko wirtualne i zależności:
+
+   ```bash
+   python -m venv .venv
+   .venv\Scripts\activate        # Windows; na Linux/macOS: source .venv/bin/activate
+   pip install -r backend/requirements.txt
+   ```
+
+2. Baza danych — kontener PostgreSQL zgodny z domyślnymi wartościami w `.env.example`:
+
+   ```bash
+   docker run -d --name skin-lesion-db -p 5432:5432 \
+     -e POSTGRES_USER=skinlesion -e POSTGRES_PASSWORD=devpassword \
+     -e POSTGRES_DB=skin_lesion_db postgres:16
+   ```
+
+   Przy kolejnych uruchomieniach wystarczy `docker start skin-lesion-db`.
+
+3. Konfiguracja: skopiuj `backend/.env.example` do `backend/.env` (domyślne wartości pasują do
+   kontenera powyżej — do zmiany tylko jeśli masz inną konfigurację lokalną).
+
+4. Migracje bazy danych:
+
+   ```bash
+   cd backend
+   alembic upgrade head
+   cd ..
+   ```
+
+5. Start API:
+
+   ```bash
+   uvicorn backend.app.main:app --reload
+   ```
+
+   - `http://127.0.0.1:8000/docs` — interaktywna dokumentacja Swagger
+   - `http://127.0.0.1:8000/ui` — prowizoryczna strona testowa do `POST /predict` (nie docelowy
+     frontend)
+
+### Trening modelu (opcjonalnie)
+
+Potrzebne tylko, jeśli nie masz gotowego checkpointu. Dodatkowe zależności (dataset, wykresy):
+
+```bash
+pip install -r ml/requirements.txt
+```
+
+Następnie: `ml/src/download_dataset.py` (pobiera HAM10000 z Kaggle) → `ml/src/split_dataset.py`
+(dzieli po `lesion_id`) → `python -m ml.src.train` (dwuetapowy trening: liniowa sonda, potem
+fine-tuning; zapisuje checkpoint do `ml/models/efficientnet_b0_ham10000.pt` i log epok do
+`ml/results/training_log.csv`).
+
+### Frontend
+
+Nie zaimplementowany jeszcze — patrz sekcja Status.
+
 ## Status
 
 Projekt w fazie wczesnej implementacji.
