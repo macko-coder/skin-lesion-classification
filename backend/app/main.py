@@ -40,6 +40,13 @@ app.include_router(cases.router)
 # Same-origin as the API, so no CORS wrangling needed for the fetch() calls.
 app.mount("/ui", StaticFiles(directory=STATIC_DIR, html=True), name="ui")
 
-# A StaticFiles mount for storage/ (to serve back image_path/
-# gradcam_image_path as viewable URLs) gets added once the frontend
-# actually needs to display them (later step).
+# Serves uploaded lesion images back out so CaseListItem/CaseRead.image_url
+# (see app/schemas/case.py) resolves to a fetchable path. Mounted on the
+# uploads/ subdir specifically, not all of storage/ -- gradcam/ isn't
+# exposed yet since Case has no gradcam_image_path column until Grad-CAM
+# is wired up (see app/models/case.py).
+app.mount(
+    "/storage/uploads",
+    StaticFiles(directory=settings.storage_dir / "uploads"),
+    name="uploads",
+)
