@@ -1,16 +1,14 @@
-"""save_upload(): path/filename handling under STORAGE_DIR.
-
-save_gradcam_overlay() deferred until Grad-CAM is wired up
-(app/ml/gradcam.py), matching Case.gradcam_image_path being deferred in
-app/models/case.py.
-"""
+"""save_upload() / save_gradcam_overlay(): path/filename handling under STORAGE_DIR."""
 
 import uuid
 from pathlib import Path
 
+from PIL import Image
+
 from backend.app.core.config import get_settings
 
 UPLOADS_SUBDIR = "uploads"
+GRADCAM_SUBDIR = "gradcam"
 
 
 def save_upload(file_bytes: bytes, original_filename: str) -> str:
@@ -33,3 +31,22 @@ def save_upload(file_bytes: bytes, original_filename: str) -> str:
     (uploads_dir / filename).write_bytes(file_bytes)
 
     return f"{UPLOADS_SUBDIR}/{filename}"
+
+
+def save_gradcam_overlay(overlay: Image.Image, original_filename: str) -> str:
+    """Saves a Grad-CAM overlay image under STORAGE_DIR/gradcam/.
+
+    Mirrors save_upload(): fresh uuid filename (not derived from the case's
+    upload filename, same collision/path-traversal reasoning), returns the
+    path relative to STORAGE_DIR (e.g. "gradcam/<uuid>.jpg") for
+    Case.gradcam_image_path.
+    """
+    ext = Path(original_filename).suffix or ".jpg"
+    filename = f"{uuid.uuid4()}{ext}"
+
+    settings = get_settings()
+    gradcam_dir = settings.storage_dir / GRADCAM_SUBDIR
+    gradcam_dir.mkdir(parents=True, exist_ok=True)
+    overlay.convert("RGB").save(gradcam_dir / filename)
+
+    return f"{GRADCAM_SUBDIR}/{filename}"

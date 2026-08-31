@@ -86,11 +86,12 @@ Projekt w fazie wczesnej implementacji.
 
 - ✅ Dataset (HAM10000, podział po `lesion_id`) i model bazowy (EfficientNet-B0, transfer
   learning, dwuetapowy trening) — `ml/`
-- ✅ Grad-CAM (skrypt eksperymentalny, jeszcze niepodłączony do backendu)
+- ✅ Grad-CAM podłączony do API — każde `POST /predict` zwraca też `gradcam_url` z nakładką
+  pokazującą obszary, na których model oparł decyzję
 - 🔧 Backend (FastAPI + PostgreSQL) — w budowie: `GET /health`, `POST /predict` (inferencja +
-  zapis przypadku), `GET/DELETE /cases` (historia przypadków), przesłane zdjęcia serwowane pod
-  `/storage/uploads`
-- ⬜ Frontend (React), Grad-CAM w API, konteneryzacja (Docker Compose), testy i dokumentacja
+  Grad-CAM + zapis przypadku), `GET/DELETE /cases` (historia przypadków), przesłane zdjęcia i
+  nakładki Grad-CAM serwowane pod `/storage/uploads` i `/storage/gradcam`
+- ⬜ Frontend (React), konteneryzacja (Docker Compose), testy i dokumentacja
 
 Aktualna roadmapa: dataset → model bazowy → Grad-CAM → backend → frontend → konteneryzacja →
 testy i dokumentacja.

@@ -7,6 +7,10 @@
   body { font-family: system-ui, sans-serif; max-width: 480px; margin: 40px auto; padding: 0 16px; }
   h1 { font-size: 1.25rem; }
   #preview { max-width: 100%; margin-top: 12px; border-radius: 8px; display: none; }
+  #images { margin-top: 12px; }
+  #images figure { margin: 0; }
+  #images img { max-width: 100%; border-radius: 8px; display: block; }
+  #images figcaption { font-size: 0.8rem; color: #666; text-align: center; margin-top: 4px; }
   #result { margin-top: 20px; }
   .bar-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-family: monospace; }
   .bar-label { width: 60px; }
@@ -25,6 +29,13 @@
   <input type="file" id="fileInput" accept="image/*">
   <img id="preview" alt="podgląd">
 
+  <div id="images" style="display: none;">
+    <figure>
+      <img id="gradcamImg" alt="nakładka Grad-CAM">
+      <figcaption>Grad-CAM — obszary, na których model oparł decyzję</figcaption>
+    </figure>
+  </div>
+
   <div id="status"></div>
   <div id="error"></div>
   <div id="result"></div>
@@ -32,6 +43,8 @@
 <script>
 const fileInput = document.getElementById('fileInput');
 const preview = document.getElementById('preview');
+const imagesEl = document.getElementById('images');
+const gradcamImg = document.getElementById('gradcamImg');
 const statusEl = document.getElementById('status');
 const errorEl = document.getElementById('error');
 const resultEl = document.getElementById('result');
@@ -42,6 +55,7 @@ fileInput.addEventListener('change', async () => {
 
   preview.src = URL.createObjectURL(file);
   preview.style.display = 'block';
+  imagesEl.style.display = 'none';
   resultEl.innerHTML = '';
   errorEl.textContent = '';
   statusEl.textContent = 'Analizuję...';
@@ -58,6 +72,8 @@ fileInput.addEventListener('change', async () => {
     }
 
     statusEl.textContent = '';
+    gradcamImg.src = data.gradcam_url;
+    imagesEl.style.display = 'block';
     renderResult(data);
   } catch (err) {
     statusEl.textContent = '';

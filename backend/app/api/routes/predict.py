@@ -7,10 +7,11 @@ from PIL import Image
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_db
+from backend.app.ml.gradcam import generate_overlay
 from backend.app.ml.inference import predict as run_inference
 from backend.app.schemas.prediction import PredictionResponse
 from backend.app.services.case_service import create_case
-from backend.app.storage.files import save_upload
+from backend.app.storage.files import save_gradcam_overlay, save_upload
 
 router = APIRouter(tags=["predict"])
 
@@ -27,12 +28,20 @@ async def predict(file: UploadFile, db: Session = Depends(get_db)) -> Prediction
     probabilities = run_inference(image)
     predicted_class = max(probabilities, key=probabilities.get)
 
-    image_path = save_upload(file_bytes, file.filename or "upload.jpg")
+    overlay = generate_overlay(image)
+    filename = file.filename or "upload.jpg"
+    image_path = save_upload(file_bytes, filename)
+    gradcam_image_path = save_gradcam_overlay(overlay, filename)
     create_case(
         db,
         image_path=image_path,
+        gradcam_image_path=gradcam_image_path,
         predicted_class=predicted_class,
         probabilities=probabilities,
     )
 
-    return PredictionResponse(predicted_class=predicted_class, probabilities=probabilities)
+    return PredictionResponse(
+        predicted_class=predicted_class,
+        probabilities=probabilities,
+        gradcam_url=f"/storage/{gradcam_image_path}",
+    )

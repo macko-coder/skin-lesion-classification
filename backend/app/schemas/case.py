@@ -13,6 +13,7 @@ class CaseListItem(BaseModel):
 
     id: uuid.UUID
     image_path: str
+    gradcam_image_path: str | None
     predicted_class: str
     created_at: datetime
 
@@ -22,9 +23,17 @@ class CaseListItem(BaseModel):
         # image_path is stored relative to STORAGE_DIR (e.g. "uploads/<uuid>.jpg");
         # the /storage/uploads mount in main.py serves that same subtree, so this
         # is just the request path the frontend can fetch/<img src> directly.
-        # No gradcam_url yet -- Case has no gradcam_image_path column until
-        # Grad-CAM is wired up (see app/models/case.py).
         return f"/storage/{self.image_path}"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def gradcam_url(self) -> str | None:
+        # Same reasoning as image_url, served by the /storage/gradcam mount.
+        # None for cases predating Grad-CAM wiring (gradcam_image_path is
+        # nullable -- see app/models/case.py).
+        if self.gradcam_image_path is None:
+            return None
+        return f"/storage/{self.gradcam_image_path}"
 
 
 class CaseRead(CaseListItem):

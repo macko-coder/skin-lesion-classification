@@ -3,7 +3,7 @@
 Minimal first-pass schema: only the columns required for the core
 upload -> predict -> store flow. Deferred for a later migration once the
 matching features exist: patient_identifier, note (no case-notes UI yet),
-gradcam_image_path (no Grad-CAM wiring yet), model_version.
+model_version.
 """
 
 import uuid
@@ -25,6 +25,10 @@ class Case(Base):
     # Path relative to STORAGE_DIR (e.g. "uploads/<uuid>.jpg"), not an absolute
     # path, so STORAGE_DIR can move (e.g. Docker volume) without touching rows.
     image_path: Mapped[str] = mapped_column(String, nullable=False)
+    # Nullable: existing rows created before this column predate Grad-CAM
+    # wiring, and a future case could in principle fail overlay generation
+    # without failing the whole /predict request.
+    gradcam_image_path: Mapped[str | None] = mapped_column(String, nullable=True)
     predicted_class: Mapped[str] = mapped_column(String(10), nullable=False)
     # {class_code: probability} for all 7 CLASSES from ml/src/dataset.py.
     # Generic JSON (not Postgres JSONB) so tests can run against SQLite.
