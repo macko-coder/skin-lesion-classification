@@ -3,7 +3,6 @@
 import sys
 from logging.config import fileConfig
 from pathlib import Path
-
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
@@ -16,13 +15,14 @@ if str(REPO_ROOT) not in sys.path:
 
 from backend.app.core.config import get_settings  # noqa: E402
 from backend.app.db.base import Base  # noqa: E402
+from backend.app.models.case import Case  # noqa: E402,F401 -- registers Case on Base.metadata
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Base.metadata (Case included, via db/base.py's import) is what
+# Base.metadata (Case included, via the explicit import above) is what
 # --autogenerate diffs the live DB schema against.
 target_metadata = Base.metadata
 
