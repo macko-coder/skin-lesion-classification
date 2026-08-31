@@ -1,5 +1,7 @@
 """Training loop for HAM10000 EfficientNet-B0 transfer learning."""
 
+import csv
+from datetime import datetime
 from pathlib import Path
 
 import torch
@@ -12,6 +14,35 @@ from ml.src.model import build_model
 
 MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
 CHECKPOINT_PATH = MODELS_DIR / "efficientnet_b0_ham10000.pt"
+
+# Append-only log of every epoch across every run, so results from different
+# training experiments (hyperparams, architecture tweaks, etc.) can be
+# compared later in pandas/Excel instead of only living in terminal scrollback.
+RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
+METRICS_LOG_PATH = RESULTS_DIR / "training_log.csv"
+METRICS_FIELDS = [
+    "timestamp",
+    "stage",
+    "epoch",
+    "num_epochs",
+    "lr",
+    "batch_size",
+    "train_loss",
+    "train_f1",
+    "val_loss",
+    "val_f1",
+    "is_best",
+]
+
+
+def log_metrics_row(row: dict) -> None:
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    is_new_file = not METRICS_LOG_PATH.exists()
+    with open(METRICS_LOG_PATH, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=METRICS_FIELDS)
+        if is_new_file:
+            writer.writeheader()
+        writer.writerow(row)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -53,8 +84,11 @@ def run_epoch(model, dataloader, optimizer=None):
     return avg_loss, macro_f1
 
 
-def run_training(model, train_dl, val_dl, optimizer, num_epochs, best_val_f1=0.0):
-    """Shared epoch loop: trains, validates, and checkpoints on val_f1 improvement.
+def run_training(
+    model, train_dl, val_dl, optimizer, num_epochs, stage, lr, batch_size, best_val_f1=0.0
+):
+    """Shared epoch loop: trains, validates, checkpoints on val_f1 improvement,
+    and logs every epoch to METRICS_LOG_PATH.
 
     best_val_f1 lets fine_tune() seed this with stage 1's score, so stage 2 only
     overwrites the checkpoint if it actually beats the frozen-backbone model.
@@ -69,10 +103,27 @@ def run_training(model, train_dl, val_dl, optimizer, num_epochs, best_val_f1=0.0
             f"val_loss={val_loss:.4f} val_f1={val_f1:.4f}"
         )
 
-        if val_f1 > best_val_f1:
+        is_best = val_f1 > best_val_f1
+        if is_best:
             best_val_f1 = val_f1
             torch.save(model.state_dict(), CHECKPOINT_PATH)
             print(f"  -> new best val_f1={val_f1:.4f}, saved checkpoint")
+
+        log_metrics_row(
+            {
+                "timestamp": datetime.now().isoformat(timespec="seconds"),
+                "stage": stage,
+                "epoch": epoch,
+                "num_epochs": num_epochs,
+                "lr": lr,
+                "batch_size": batch_size,
+                "train_loss": f"{train_loss:.4f}",
+                "train_f1": f"{train_f1:.4f}",
+                "val_loss": f"{val_loss:.4f}",
+                "val_f1": f"{val_f1:.4f}",
+                "is_best": is_best,
+            }
+        )
 
     return best_val_f1
 
@@ -95,7 +146,9 @@ def train(
         filter(lambda p: p.requires_grad, model.parameters()), lr=lr
     )
 
-    return run_training(model, train_dl, val_dl, optimizer, num_epochs)
+    return run_training(
+        model, train_dl, val_dl, optimizer, num_epochs, "train", lr, batch_size
+    )
 
 
 def fine_tune(num_epochs: int = 10, batch_size: int = 32, lr: float = 1e-5):
@@ -117,7 +170,15 @@ def fine_tune(num_epochs: int = 10, batch_size: int = 32, lr: float = 1e-5):
     print(f"Stage 1 checkpoint val_f1={stage1_val_f1:.4f} (fine-tuning baseline)")
 
     return run_training(
-        model, train_dl, val_dl, optimizer, num_epochs, best_val_f1=stage1_val_f1
+        model,
+        train_dl,
+        val_dl,
+        optimizer,
+        num_epochs,
+        "fine_tune",
+        lr,
+        batch_size,
+        best_val_f1=stage1_val_f1,
     )
 
 
