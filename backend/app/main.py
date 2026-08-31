@@ -16,7 +16,7 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     get_model()  # load the checkpoint once at startup, not on the first request
     yield
 
